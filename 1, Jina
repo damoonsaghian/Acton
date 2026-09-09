@@ -158,13 +158,14 @@ but run'time polymorphism (eg trait objects, or inheritance plus virtual functio
 , it destroys covariance
 , there is some run'time overhead (3 times regular function calls)
 
-Jina also has an unsafe portion to interoperate with the low level system, and existing C/C++ libraries
+Jina also has unsafe mechanisms to interoperate with the low level system, and existing C/C++ libraries
 C++ (unlike Rust) allows us to have packages that are compiled independently as dynamic libraries,
 	then imported and used in other packages
 C was one of the first attempts to make programming easier by introducing types and functions
 after that, there was generally two approaches in creating more advanced programming languages
 , garbage collection (the wrong approach): Java, C# ...
 , C++: keep pointers for systems programming, but otherwise use references, move semantic, and RAII
+despite that, many projects in Linux/Unix world, chose inferior options like C, C+Glib, and recently, Rust
 C++ may look ugly on the outside, but to quote its creator:
 	"within C++, there is a much smaller and cleaner language struggling to get out"
 	and i think that language is "Jina"
