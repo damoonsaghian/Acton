@@ -6,433 +6,434 @@
 <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css'>
 <style>
 body {
-	padding: 4px;
+	padding: 5px;
 	margin: 0;
 	font-family: Hack;
 	font-size: 11ppt;
 	color: #222222;
-	white-space: pre;
 	tab-size: 4;
+	white-space: pre;
 }
 </style>
 </head><body><a href='https://github.com/damoonsaghian/Jina'><h1>Jina</h1></a>
-<h2>1, Jina</h2><div>Jina is a programming language with sane memory management, actors, and a coherent type system and syntax
-</div><div>
-</div><div>Mahsa Jina Amini was a 22 years old girl, murdered by the evil Islamic regime in Iran
-</div><div>at her funeral, these words were written on a stone above her grave:
-</div><div>	beloved Jina, you will not die, your name will become a code
-</div><div>
-</div><div>Jina has sane memory management, ie there is no garbage collector
-</div><div>	<a href="https://www.toptal.com/software/eliminating-garbage-collector">https://www.toptal.com/software/eliminating-garbage-collector</a>
-</div><div>to achieve that, Jina introduces four special markers for types:
-</div><div>, immutable data: T
-</div><div>, shared immutable data (static, or reference counted): T$
-</div><div>, immutable borrow: T&
-</div><div>, mutable borrow: T!&
-</div><div>, mutable data: T!
-</div><div>
-</div><div>aliasing rules in variable definitions
-</div><div>when a variable of type "T" is aliased by:
-</div><div>, a variable of type "T", move (do not copy heap) if not used in the following code; copy otherwise
-</div><div>, a variable of type "T$", move or copy
-</div><div>, a variable of type "T&", borrow
-</div><div>, a variable of type "T!&", it's compile'time error
-</div><div>, a variable of type "T!", move or copy
-</div><div>when a variable of type "T$" is aliased by:
-</div><div>, a variable of type "T", copy
-</div><div>, a variable of type "T$", create reference, and (if not static) increase reference count
-</div><div>, a variable of type "T&", borrow
-</div><div>, a variable of type "T!&", it's compile'time error
-</div><div>, a variable of type "T!", move or copy
-</div><div>when a variable of type "T&" is aliased by:
-</div><div>, a variable of type "T", copy
-</div><div>, a variable of type "T$", copy
-</div><div>, a variable of type "T&", borrow
-</div><div>, a variable of type "T!&", it's compile'time error
-</div><div>, a variable of type "T!", copy
-</div><div>when a variable of type "T!&" is aliased by:
-</div><div>, a variable of type "T", copy
-</div><div>, a variable of type "T$", copy
-</div><div>, a variable of type "T&", borrow
-</div><div>, a variable of type "T!&", borrow
-</div><div>, a variable of type "T!", copy
-</div><div>when a variable of type "T!" is aliased by:
-</div><div>, a variable of type "T", move or copy
-</div><div>, a variable of type "T$", move or copy
-</div><div>, a variable of type "T&", borrow
-</div><div>, a variable of type "T!&", borrow
-</div><div>, a variable of type "T!", move or copy
-</div><div>
-</div><div>assignment rules
-</div><div>when a value of type "T" or "T!!" is assigned to a variable of type "T!" or "T!!": move or copy
-</div><div>when a value of type "T$", "T&" or "T!" is assigned to a variable of type "T!" or "T!!": copy
-</div><div>
-</div><div>borrow types will be tagged by their owner
-</div><div>borrow tags will be inherited by further borrows
-</div><div>function arguments with borrow types are tagged with integers, starting from one
-</div><div>for functions with multiple borrow arguments, that also return a borrow type,
-</div><div>	and the tag of returned type is inherited from any argument other than the first one,
-</div><div>	in the return type, it must be indicated that which borrow argument will be inherited
-</div><div>	A, B&, C& -&gt C&2
-</div><div>the borrow tag of variables captured in a closure, will be prefixed with "PARENT_"
-</div><div>only borrows with matched tags can be aliased by each other (checked at compile'time)
-</div><div>this simple rule automatically guarantees correct lifetimes, cause it means:
-</div><div>, we can't assign a locally created (or moved) value, to a mutable borrow variable captured in a closure
-</div><div>, we can't return a borrow from a function, unless it's inherited from one of the function's arguments
-</div><div>
-</div><div>types containing borrow types, will have a borrow marker themselves
-</div><div>this is necessary for their borrow tags to be statically determined
-</div><div>also types containing mutable types, will be mutable themselves
-</div><div>in other words, borrow and mutability markers can't be wrapped, they always leak out
-</div><div>in addition, borrow and shared markers are penetrative, ie:
-</div><div>	, borrow types can't contain non'borrow types
-</div><div>	, share types can't contain non'share types (though all of them use the parent's reference counter)
-</div><div>type definitions (immutable types) can only be made of immutable and share types
-</div><div>	A := B, C$
-</div><div>share types can only contain share types
-</div><div>	a :A$ = ...
-</div><div>	a.1 :B$
-</div><div>	a.2 :C$
-</div><div>immutable borrow types can only contain immutable borrow types
-</div><div>	a :A& = ...
-</div><div>	a.1 :B&
-</div><div>	a.2 :C&
-</div><div>mutable borrow types can only contain borrow types
-</div><div>	a :A!&
-</div><div>	a.1 :B!&
-</div><div>	a.2 :C&
-</div><div>mutable types can only contain mutable and shared types
-</div><div>	a :A!
-</div><div>	a.1 :B!
-</div><div>	a.2 :C$
-</div><div>
-</div><div>functions in Jina are closures, ie they capture their environment
-</div><div>each closure has its own distinct type that includes the type of the captured variables
-</div><div>but we do not work with closure types directly
-</div><div>what we care about is the interface that they implement
-</div><div>	c[t::(A,B-&gtC)] :t! = { a :A, b :B -&gt C | ... }
-</div><div>	c[t::(A,B-&gtC)] :t = { a :A, b :B -&gt C || ... }
-</div><div>a mutable borrow closure (with type "t!") can mutably borrow captured variables
-</div><div>but an immutable non'borrow closure (with type "t") can't
-</div><div>
-</div><div>sharing mutable data in concurrent parts of a program is problematic
-</div><div>a data race happens when these three behaviors occur:
-</div><div>, two or more pointers access the same data at the same time
-</div><div>, at least one of the pointers is being used to write to the data
-</div><div>, there's no mechanism being used to synchronize access to the data
-</div><div>to deal with it, programming languages choose different approaches:
-</div><div>, some implement complicated and error prone lock mechanisms
-</div><div>, some abandon concurrency, and make single threaded programs
-</div><div>, functional programming languages avoid mutability as much as possible
-</div><div>	and when mutability is necessary, they use monads or algebraic effects to control shared mutability
-</div><div>	avoiding mutability, and the need for aggressive garbage collection, results in bad performance
-</div><div>
-</div><div>Jina uses actors for asynchronous (including concurrent) programming,
-</div><div>	and controls aliasing (sharing) and mutability using type markers,
-</div><div>	ie the same approach used to deal with memory management
-</div><div>messages sent to actors are own closures, and can't capture borrows
-</div><div>thus messages can safely be called concurrently, since they can't change their captured environment
-</div><div>
-</div><div>actors are opaque types, ie their internal components are not accessible,
-</div><div>	and are referred to by an ID, instead of a memory address
-</div><div>actors (and their messages) can only be destroyed explicitly
-</div><div>this implies that an ID can refer to a deallocated actor
-</div><div>	when a message is sent to a deallocated actor, it will be ignored
-</div><div>reference counting combined with interior mutability can create reference cycles
-</div><div>	<a href="https://doc.rust-lang.org/book/ch15-06-reference-cycles.html">https://doc.rust-lang.org/book/ch15-06-reference-cycles.html</a>
-</div><div>	in Jina interior mutability is only possible using actors
-</div><div>	and since actors are not reference counted, there is no reference cycles in Jina
-</div><div>
-</div><div>Jina does not hide inherent complexity; in fact it bolds it, so it can be seen and avoided
-</div><div>by inherent complexity i mean a complexity which can not be abstracted away completely
-</div><div>	ie if we try to hide it, it will re'emerge somewhere else
-</div><div>in fact, hiding inherent complexity usually leads to choosing the wrong approach
-</div><div>maybe the most prominent example of an inherent complexity in programming is memory management
-</div><div>rather than hiding it behind a garbage collector, Jina uses borrow type markers,
-</div><div>	to eliminate the need for a garbage collector in synchronous programming
-</div><div>and for asynchronous parts, we use shared type marker and actors
-</div><div>
-</div><div>types show us what we can do with the data, ie which operations are valid
-</div><div>subtyping is problematic:
-</div><div><a href="https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)">https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)</a>
-</div><div><a href="https://www.tedinski.com/2018/06/26/variance.html">https://www.tedinski.com/2018/06/26/variance.html</a>
-</div><div>i feel that this problem was the motivation behind dynamic typing (another bad idea)
-</div><div>to avoid this problem, some languages (eg Rust) have two kinds of types:
-</div><div>, concrete types can be instantiated, but cannot have subtypes
-</div><div>, abstract types (also called traits or interfaces) cannot be instantiated, but can have subtypes
-</div><div>although Rust has trait objects (dynamic interfaces) with the same problem regarding variance
-</div><div>	https://users.rust-lang.org/t/vector-covariant-in-its-element-type/80582
-</div><div>	https://stackoverflow.com/questions/55200843/what-does-it-mean-that-box-is-covariant-if-boxdyn-b-is-not-a-subtype-of-boxdy
-</div><div>in Jina we have interfaces, but there is no dynamic interfaces
-</div><div>
-</div><div>instead of subtyping, in Jina we have convertible types
-</div><div>it's like in mathematics where we can easily do arithmetic across integer, rational, real and complex numbers
-</div><div>the idea is to only do this for types that can be converted with negligible run'time overhead
-</div><div>
-</div><div>compile'time polymorphism (eg templates and generics) has different linking semantics
-</div><div>	ie each compilation unit generates its own specialized version,
-</div><div>	which can create duplicates, and thus increase the size of the produced binary
-</div><div>but run'time polymorphism (eg trait objects, or inheritance plus virtual functions) has serious problems too:
-</div><div>, it destroys covariance
-</div><div>, there is some run'time overhead (3 times regular function calls)
-</div><div>
-</div><div>Jina also has an unsafe portion to interoperate with the low level system, and existing C/C++ libraries
-</div><div>C++ (unlike Rust) allows us to have packages that are compiled independently as dynamic libraries,
-</div><div>	then imported and used in other packages
-</div><div>C was one of the first attempts to make programming easier by introducing types and functions
-</div><div>after that, there was generally two approaches in creating more advanced programming languages
-</div><div>, garbage collection (the wrong approach): Java, C# ...
-</div><div>, C++: keep pointers for systems programming, but otherwise use references, move semantic, and RAII
-</div><div>C++ may look ugly on the outside, but to quote its creator:
-</div><div>	"within C++, there is a much smaller and cleaner language struggling to get out"
-</div><div>	and i think that language is "Jina"
-</div>
-<h2>2, syntax</h2><div>comments:
-</div><div>	; comment line
-</div><div>	; comment
-</div><div>		multi'line
-</div><div>	;; commant at the end of the line
-</div><div>	;
-</div><div>	comment
-</div><div>	block
-</div><div>	;;
-</div><div>
-</div><div>identifiers (variable names) start with an alphabetic character, and can include numbers and apostrophe:
-</div><div>	abc'efg0123
-</div><div>
-</div><div>defining an immutable variable:
-</div><div>	v :T = ...
-</div><div>	v = T()
-</div><div>defining a shared variable ($ is optional for variables defined outside of funtions, aka static variables):
-</div><div>	v :T$ = ...
-</div><div>	v$ = T()
-</div><div>defining a immutable borrow variable:
-</div><div>	v :T& = ...
-</div><div>	v& = T()
-</div><div>defining a mutable variable:
-</div><div>	vm :T! = ...
-</div><div>	vm! = T()
-</div><div>defining a mutable borrow variable:
-</div><div>	v :T!& = vm
-</div><div>	v!& = vm
-</div><div>
-</div><div>assignment to mutable variables:
-</div><div>	v. = ...
-</div><div>
-</div><div>numeric types:
-</div><div>, Float: floating'point numbers with arbitrary precision and ball arithmetic
-</div><div>, Float2: floating'point numbers with double precision ("double" in C++)
-</div><div>, Float1: floating'point numbers with single precision ("float" in C++)
-</div><div>, Int: arbitrary sized integer
-</div><div>, Int8: 8 bytes integer ("std::int64_t" in C++)
-</div><div>, Int4: 4 bytes integer ("std::int32_t" in C++)
-</div><div>, Int2: 2 bytes integer ("std::int16_t" in C++)
-</div><div>, Int1: 1 byte integer ("std::int8_t" in C++)
-</div><div>, Int'u: word'sized unsigned integer ("std::size_t" in C++)
-</div><div>, Int'u4 4 bytes unsigned integer ("std::uint32_t" in C++)
-</div><div>, Int'u2 2 bytes unsigned integer ("std::uint16_t" in C++)
-</div><div>, Int'u1 1 bytes unsigned integer ("std::uint8_t" in C++)
-</div><div>numeric literals:
-</div><div>	1.0
-</div><div>	1.23e-4
-</div><div>	0x123p-6 ;; point can't be used in hexadecimal floats, due to ambiguity with method calls
-</div><div>	1'234'567'890
-</div><div>	0x1234'5678'9ABC'DEF0
-</div><div>complex numbers can be made of any type implementing the "Num'r" interface
-</div><div>	c :Complex[Int4] = 1 + 1i
-</div><div>	c = 1 + 0i
-</div><div>	c = Complex[Int4] 1 0
-</div><div>
-</div><div>lists:
-</div><div>	l :List[Int4] = [1, 2, 3]
-</div><div>indexing:
-</div><div>	e :Maybe[Int4] = l_1
-</div><div>note that the type of the result of indexing above is actually "Maybe[Int4]&",
-</div><div>	which is copied into the variable with type "Maybe[Int4]"
-</div><div>mutating lists:
-</div><div>	l.put 4 at: 3 ;; [ 1, 2, 3, 4 ]
-</div><div>	l.put 0 at: 0 ;; [ 0, 2, 3, 4 ]
-</div><div>
-</div><div>text:
-</div><div>, Txt'b: a byte containing an ASCII code (equivalent to "char" in C++)
-</div><div>, Txt: UTF8 encoded text, implemented as a list of "Txt'b" values
-</div><div>character literals:
-</div><div>	'a' ;; a byte whose value is the ASCII code for character "a"
-</div><div>	'
+<h2>1, Jina</h2><div><span>Jina is a programming language with sane memory management, actors, and a coherent type system and syntax
+</span></div><div><span>
+</span></div><div><span>Mahsa Jina Amini was a 22 years old girl, murdered by the evil Islamic regime in Iran
+</span></div><div><span>at her funeral, these words were written on a stone above her grave:
+</span></div><div><span></span>	<span>beloved Jina, you will not die, your name will become a code
+</span></div><div><span>
+</span></div><div><span>Jina has sane memory management, ie there is no garbage collector
+</span></div><div><span></span>	<span><a href="https://www.toptal.com/software/eliminating-garbage-collector">https://www.toptal.com/software/eliminating-garbage-collector</a>
+</span></div><div><span>to achieve that, Jina introduces four special markers for types:
+</span></div><div><span>, immutable data: T
+</span></div><div><span>, shared immutable data (static, or reference counted): T$
+</span></div><div><span>, immutable borrow: T&
+</span></div><div><span>, mutable borrow: T!&
+</span></div><div><span>, mutable data: T!
+</span></div><div><span>
+</span></div><div><span>aliasing rules in variable definitions
+</span></div><div><span>when a variable of type "T" is aliased by:
+</span></div><div><span>, a variable of type "T", move (do not copy heap) if not used in the following code; copy otherwise
+</span></div><div><span>, a variable of type "T$", move or copy
+</span></div><div><span>, a variable of type "T&", borrow
+</span></div><div><span>, a variable of type "T!&", it's compile'time error
+</span></div><div><span>, a variable of type "T!", move or copy
+</span></div><div><span>when a variable of type "T$" is aliased by:
+</span></div><div><span>, a variable of type "T", copy
+</span></div><div><span>, a variable of type "T$", create reference, and (if not static) increase reference count
+</span></div><div><span>, a variable of type "T&", borrow
+</span></div><div><span>, a variable of type "T!&", it's compile'time error
+</span></div><div><span>, a variable of type "T!", move or copy
+</span></div><div><span>when a variable of type "T&" is aliased by:
+</span></div><div><span>, a variable of type "T", copy
+</span></div><div><span>, a variable of type "T$", copy
+</span></div><div><span>, a variable of type "T&", borrow
+</span></div><div><span>, a variable of type "T!&", it's compile'time error
+</span></div><div><span>, a variable of type "T!", copy
+</span></div><div><span>when a variable of type "T!&" is aliased by:
+</span></div><div><span>, a variable of type "T", copy
+</span></div><div><span>, a variable of type "T$", copy
+</span></div><div><span>, a variable of type "T&", borrow
+</span></div><div><span>, a variable of type "T!&", borrow
+</span></div><div><span>, a variable of type "T!", copy
+</span></div><div><span>when a variable of type "T!" is aliased by:
+</span></div><div><span>, a variable of type "T", move or copy
+</span></div><div><span>, a variable of type "T$", move or copy
+</span></div><div><span>, a variable of type "T&", borrow
+</span></div><div><span>, a variable of type "T!&", borrow
+</span></div><div><span>, a variable of type "T!", move or copy
+</span></div><div><span>
+</span></div><div><span>assignment rules
+</span></div><div><span>when a value of type "T" or "T!!" is assigned to a variable of type "T!" or "T!!": move or copy
+</span></div><div><span>when a value of type "T$", "T&" or "T!" is assigned to a variable of type "T!" or "T!!": copy
+</span></div><div><span>
+</span></div><div><span>borrow types will be tagged by their owner
+</span></div><div><span>borrow tags will be inherited by further borrows
+</span></div><div><span>function arguments with borrow types are tagged with integers, starting from one
+</span></div><div><span>for functions with multiple borrow arguments, that also return a borrow type,
+</span></div><div><span></span>	<span>and the tag of returned type is inherited from any argument other than the first one,
+</span></div><div><span></span>	<span>in the return type, it must be indicated that which borrow argument will be inherited
+</span></div><div><span></span>	<span>A, B&, C& -&gt C&2
+</span></div><div><span>the borrow tag of variables captured in a closure, will be prefixed with "PARENT_"
+</span></div><div><span>only borrows with matched tags can be aliased by each other (checked at compile'time)
+</span></div><div><span>this simple rule automatically guarantees correct lifetimes, cause it means:
+</span></div><div><span>, we can't assign a locally created (or moved) value, to a mutable borrow variable captured in a closure
+</span></div><div><span>, we can't return a borrow from a function, unless it's inherited from one of the function's arguments
+</span></div><div><span>
+</span></div><div><span>types containing borrow types, will have a borrow marker themselves
+</span></div><div><span>this is necessary for their borrow tags to be statically determined
+</span></div><div><span>also types containing mutable types, will be mutable themselves
+</span></div><div><span>in other words, borrow and mutability markers can't be wrapped, they always leak out
+</span></div><div><span>in addition, borrow and shared markers are penetrative, ie:
+</span></div><div><span></span>	<span>, borrow types can't contain non'borrow types
+</span></div><div><span></span>	<span>, share types can't contain non'share types (though all of them use the parent's reference counter)
+</span></div><div><span>type definitions (immutable types) can only be made of immutable and share types
+</span></div><div><span></span>	<span>A := B, C$
+</span></div><div><span>share types can only contain share types
+</span></div><div><span></span>	<span>a :A$ = ...
+</span></div><div><span></span>	<span>a.1 :B$
+</span></div><div><span></span>	<span>a.2 :C$
+</span></div><div><span>immutable borrow types can only contain immutable borrow types
+</span></div><div><span></span>	<span>a :A& = ...
+</span></div><div><span></span>	<span>a.1 :B&
+</span></div><div><span></span>	<span>a.2 :C&
+</span></div><div><span>mutable borrow types can only contain borrow types
+</span></div><div><span></span>	<span>a :A!&
+</span></div><div><span></span>	<span>a.1 :B!&
+</span></div><div><span></span>	<span>a.2 :C&
+</span></div><div><span>mutable types can only contain mutable and shared types
+</span></div><div><span></span>	<span>a :A!
+</span></div><div><span></span>	<span>a.1 :B!
+</span></div><div><span></span>	<span>a.2 :C$
+</span></div><div><span>
+</span></div><div><span>functions in Jina are closures, ie they capture their environment
+</span></div><div><span>each closure has its own distinct type that includes the type of the captured variables
+</span></div><div><span>but we do not work with closure types directly
+</span></div><div><span>what we care about is the interface that they implement
+</span></div><div><span></span>	<span>c[t::(A,B-&gtC)] :t! = { a :A, b :B -&gt C | ... }
+</span></div><div><span></span>	<span>c[t::(A,B-&gtC)] :t = { a :A, b :B -&gt C || ... }
+</span></div><div><span>a mutable borrow closure (with type "t!") can mutably borrow captured variables
+</span></div><div><span>but an immutable non'borrow closure (with type "t") can't
+</span></div><div><span>
+</span></div><div><span>sharing mutable data in concurrent parts of a program is problematic
+</span></div><div><span>a data race happens when these three behaviors occur:
+</span></div><div><span>, two or more pointers access the same data at the same time
+</span></div><div><span>, at least one of the pointers is being used to write to the data
+</span></div><div><span>, there's no mechanism being used to synchronize access to the data
+</span></div><div><span>to deal with it, programming languages choose different approaches:
+</span></div><div><span>, some implement complicated and error prone lock mechanisms
+</span></div><div><span>, some abandon concurrency, and make single threaded programs
+</span></div><div><span>, functional programming languages avoid mutability as much as possible
+</span></div><div><span></span>	<span>and when mutability is necessary, they use monads or algebraic effects to control shared mutability
+</span></div><div><span></span>	<span>avoiding mutability, and the need for aggressive garbage collection, results in bad performance
+</span></div><div><span>
+</span></div><div><span>Jina uses actors for asynchronous (including concurrent) programming,
+</span></div><div><span></span>	<span>and controls aliasing (sharing) and mutability using type markers,
+</span></div><div><span></span>	<span>ie the same approach used to deal with memory management
+</span></div><div><span>messages sent to actors are own closures, and can't capture borrows
+</span></div><div><span>thus messages can safely be called concurrently, since they can't change their captured environment
+</span></div><div><span>
+</span></div><div><span>actors are opaque types, ie their internal components are not accessible,
+</span></div><div><span></span>	<span>and are referred to by an ID, instead of a memory address
+</span></div><div><span>actors (and their messages) can only be destroyed explicitly
+</span></div><div><span>this implies that an ID can refer to a deallocated actor
+</span></div><div><span></span>	<span>when a message is sent to a deallocated actor, it will be ignored
+</span></div><div><span>reference counting combined with interior mutability can create reference cycles
+</span></div><div><span></span>	<span><a href="https://doc.rust-lang.org/book/ch15-06-reference-cycles.html">https://doc.rust-lang.org/book/ch15-06-reference-cycles.html</a>
+</span></div><div><span></span>	<span>in Jina interior mutability is only possible using actors
+</span></div><div><span></span>	<span>and since actors are not reference counted, there is no reference cycles in Jina
+</span></div><div><span>
+</span></div><div><span>Jina does not hide inherent complexity; in fact it bolds it, so it can be seen and avoided
+</span></div><div><span>by inherent complexity i mean a complexity which can not be abstracted away completely
+</span></div><div><span></span>	<span>ie if we try to hide it, it will re'emerge somewhere else
+</span></div><div><span>in fact, hiding inherent complexity usually leads to choosing the wrong approach
+</span></div><div><span>maybe the most prominent example of an inherent complexity in programming is memory management
+</span></div><div><span>rather than hiding it behind a garbage collector, Jina uses borrow type markers,
+</span></div><div><span></span>	<span>to eliminate the need for a garbage collector in synchronous programming
+</span></div><div><span>and for asynchronous parts, we use shared type marker and actors
+</span></div><div><span>
+</span></div><div><span>types show us what we can do with the data, ie which operations are valid
+</span></div><div><span>subtyping is problematic:
+</span></div><div><span><a href="https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)">https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)</a>
+</span></div><div><span><a href="https://www.tedinski.com/2018/06/26/variance.html">https://www.tedinski.com/2018/06/26/variance.html</a>
+</span></div><div><span>i feel that this problem was the motivation behind dynamic typing (another bad idea)
+</span></div><div><span>to avoid this problem, some languages (eg Rust) have two kinds of types:
+</span></div><div><span>, concrete types can be instantiated, but cannot have subtypes
+</span></div><div><span>, abstract types (also called traits or interfaces) cannot be instantiated, but can have subtypes
+</span></div><div><span>although Rust has trait objects (dynamic interfaces) with the same problem regarding variance
+</span></div><div><span></span>	<span>https://users.rust-lang.org/t/vector-covariant-in-its-element-type/80582
+</span></div><div><span></span>	<span>https://stackoverflow.com/questions/55200843/what-does-it-mean-that-box-is-covariant-if-boxdyn-b-is-not-a-subtype-of-boxdy
+</span></div><div><span>in Jina we have interfaces, but there is no dynamic interfaces
+</span></div><div><span>
+</span></div><div><span>instead of subtyping, in Jina we have convertible types
+</span></div><div><span>it's like in mathematics where we can easily do arithmetic across integer, rational, real and complex numbers
+</span></div><div><span>the idea is to only do this for types that can be converted with negligible run'time overhead
+</span></div><div><span>
+</span></div><div><span>compile'time polymorphism (eg templates and generics) has different linking semantics
+</span></div><div><span></span>	<span>ie each compilation unit generates its own specialized version,
+</span></div><div><span></span>	<span>which can create duplicates, and thus increase the size of the produced binary
+</span></div><div><span>but run'time polymorphism (eg trait objects, or inheritance plus virtual functions) has serious problems too:
+</span></div><div><span>, it destroys covariance
+</span></div><div><span>, there is some run'time overhead (3 times regular function calls)
+</span></div><div><span>
+</span></div><div><span>Jina also has unsafe mechanisms to interoperate with the low level system, and existing C/C++ libraries
+</span></div><div><span>C++ (unlike Rust) allows us to have packages that are compiled independently as dynamic libraries,
+</span></div><div><span></span>	<span>then imported and used in other packages
+</span></div><div><span>C was one of the first attempts to make programming easier by introducing types and functions
+</span></div><div><span>after that, there was generally two approaches in creating more advanced programming languages
+</span></div><div><span>, garbage collection (the wrong approach): Java, C# ...
+</span></div><div><span>, C++: keep pointers for systems programming, but otherwise use references, move semantic, and RAII
+</span></div><div><span>despite that, many projects in Linux/Unix world, chose inferior options like C, C+Glib, and recently, Rust
+</span></div><div><span>C++ may look ugly on the outside, but to quote its creator:
+</span></div><div><span></span>	<span>"within C++, there is a much smaller and cleaner language struggling to get out"
+</span></div><div><span></span>	<span>and i think that language is "Jina"
+</span></div>
+<h2>2, syntax</h2><div><span>comments:
+</span></div><div><span></span>	<span>; comment line
+</span></div><div><span></span>	<span>; comment
+</span></div><div><span></span>	<span></span>	<span>multi'line
+</span></div><div><span></span>	<span>;; commant at the end of the line
+</span></div><div><span></span>	<span>;
+</span></div><div><span></span>	<span>comment
+</span></div><div><span></span>	<span>block
+</span></div><div><span></span>	<span>;;
+</span></div><div><span>
+</span></div><div><span>identifiers (variable names) start with an alphabetic character, and can include numbers and apostrophe:
+</span></div><div><span></span>	<span>abc'efg0123
+</span></div><div><span>
+</span></div><div><span>defining an immutable variable:
+</span></div><div><span></span>	<span>v :T = ...
+</span></div><div><span></span>	<span>v = T()
+</span></div><div><span>defining a shared variable ($ is optional for variables defined outside of funtions, aka static variables):
+</span></div><div><span></span>	<span>v :T$ = ...
+</span></div><div><span></span>	<span>v$ = T()
+</span></div><div><span>defining a immutable borrow variable:
+</span></div><div><span></span>	<span>v :T& = ...
+</span></div><div><span></span>	<span>v& = T()
+</span></div><div><span>defining a mutable variable:
+</span></div><div><span></span>	<span>vm :T! = ...
+</span></div><div><span></span>	<span>vm! = T()
+</span></div><div><span>defining a mutable borrow variable:
+</span></div><div><span></span>	<span>v :T!& = vm
+</span></div><div><span></span>	<span>v!& = vm
+</span></div><div><span>
+</span></div><div><span>assignment to mutable variables:
+</span></div><div><span></span>	<span>v. = ...
+</span></div><div><span>
+</span></div><div><span>numeric types:
+</span></div><div><span>, Float: floating'point numbers with arbitrary precision and ball arithmetic
+</span></div><div><span>, Float2: floating'point numbers with double precision ("double" in C++)
+</span></div><div><span>, Float1: floating'point numbers with single precision ("float" in C++)
+</span></div><div><span>, Int: arbitrary sized integer
+</span></div><div><span>, Int8: 8 bytes integer ("std::int64_t" in C++)
+</span></div><div><span>, Int4: 4 bytes integer ("std::int32_t" in C++)
+</span></div><div><span>, Int2: 2 bytes integer ("std::int16_t" in C++)
+</span></div><div><span>, Int1: 1 byte integer ("std::int8_t" in C++)
+</span></div><div><span>, Int'u: word'sized unsigned integer ("std::size_t" in C++)
+</span></div><div><span>, Int'u4 4 bytes unsigned integer ("std::uint32_t" in C++)
+</span></div><div><span>, Int'u2 2 bytes unsigned integer ("std::uint16_t" in C++)
+</span></div><div><span>, Int'u1 1 bytes unsigned integer ("std::uint8_t" in C++)
+</span></div><div><span>numeric literals:
+</span></div><div><span></span>	<span>1.0
+</span></div><div><span></span>	<span>1.23e-4
+</span></div><div><span></span>	<span>0x123p-6 ;; point can't be used in hexadecimal floats, due to ambiguity with method calls
+</span></div><div><span></span>	<span>1'234'567'890
+</span></div><div><span></span>	<span>0x1234'5678'9ABC'DEF0
+</span></div><div><span>complex numbers can be made of any type implementing the "Num'r" interface
+</span></div><div><span></span>	<span>c :Complex[Int4] = 1 + 1i
+</span></div><div><span></span>	<span>c = 1 + 0i
+</span></div><div><span></span>	<span>c = Complex[Int4] 1 0
+</span></div><div><span>
+</span></div><div><span>lists:
+</span></div><div><span></span>	<span>l :List[Int4] = [1, 2, 3]
+</span></div><div><span>indexing:
+</span></div><div><span></span>	<span>e :Maybe[Int4] = l_1
+</span></div><div><span>note that the type of the result of indexing above is actually "Maybe[Int4]&",
+</span></div><div><span></span>	<span>which is copied into the variable with type "Maybe[Int4]"
+</span></div><div><span>mutating lists:
+</span></div><div><span></span>	<span>l.put 4 at: 3 ;; [ 1, 2, 3, 4 ]
+</span></div><div><span></span>	<span>l.put 0 at: 0 ;; [ 0, 2, 3, 4 ]
+</span></div><div><span>
+</span></div><div><span>text:
+</span></div><div><span>, Txt'b: a byte containing an ASCII code (equivalent to "char" in C++)
+</span></div><div><span>, Txt: UTF8 encoded text, implemented as a list of "Txt'b" values
+</span></div><div><span>character literals:
+</span></div><div><span></span>	<span>'a' ;; a byte whose value is the ASCII code for character "a"
+</span></div><div><span></span>	<span>'
 ' ;; a byte whose value is the ASCII code for the character with escape code "
 "
-</div><div>	'\x12' ;; a byte with hexadecimal value 0x12
-</div><div>text literals:
-</div><div>	t :Txt = "abc def"
-</div><div>text interpolation: "abc{x}"
-</div><div>alternative syntax that makes writing single word text easier:
-</div><div>	'abc
-</div><div>multiline text, equivalent to "first line
-	second line":
-</div><div>	s = "
-</div><div>		first line
-</div><div>			second line
-</div><div>	"
-</div><div>it's better to split long text into a list of lines:
-</div><div>	s = """
-</div><div>		first line
-</div><div>			second line
-</div><div>	"""
-</div><div>which is equivalent to:
-</div><div>	["first line", "	second line"]
-</div><div>
-</div><div>dictionaries are indexed using text (instead of "Int'u" as in lists):
-</div><div>	d :Dict[Int4] = [a: 1, b: 2, c: 3]
-</div><div>indexing:
-</div><div>	d_'a
-</div><div>
-</div><div>tuples:
-</div><div>	r :(Int4, Int4, c: Int4) = 1, 2, c: 3
-</div><div>to access elements:
-</div><div>	r.a
-</div><div>	r.0
-</div><div>multiple assignment using tuple expansion:
-</div><div>	a, b = 1, 2, 3
-</div><div>tagged fields can be expanded too, if the name of variables match:
-</div><div>	a, b = a: 1, b: 2
-</div><div>mutating a tuple field:
-</div><div>	r.a = 10
-</div><div>small tuples will be kept on stack, big ones on the heap
-</div><div>
-</div><div>function:
-</div><div>	f[t::(A,B-&gtC)] :t = { a :A, b :B -&gt C || ... }
-</div><div>	f ::(A,B-&gtC) = { a :A, b :B -&gt C || ... }
-</div><div>	f = { a :A, b :B -&gt C || ... }
-</div><div>function that can borrow from its environment:
-</div><div>	f ::(A,B-&gtC)!& = { a :A, b :B -&gt C | ... }
-</div><div>	f ::(-&gt)!& = { ... }
-</div><div>	f = { ... }
-</div><div>function call:
-</div><div>	f x y
-</div><div>which is equivalent to these forms:
-</div><div>	f(x, y)
-</div><div>	f b: y a: x
-</div><div>	x, y &gt&gt f
-</div><div>
-</div><div>default values for parameters:
-</div><div>	f = { a = 1 , b = 2 || ... }
-</div><div>	f b: 22
-</div><div>	f 11
-</div><div>	f()
-</div><div>
-</div><div>conditional expression:
-</div><div>	condition .then {} .else {}
-</div><div>	condition1 .then {} .elif {condition2} {} .elif {condition3} {} .else {}
-</div><div>
-</div><div>and or:
-</div><div>	a && b
-</div><div>	a \ b
-</div><div>which are equivalent to:
-</div><div>	a .and {b}
-</div><div>	a .or {b}
-</div><div>not: -a
-</div><div>
-</div><div>there is no loop construct in Jina
-</div><div>instead we have iterators (types that implement Iter interface):
-</div><div>	iter.each { x | ... }
-</div><div>
-</div><div>actor:
-</div><div>	a :Actor[S] = Actor.new S.new()
-</div><div>	a.do { b :S!& || ... }
-</div><div>
-</div><div>modules are files containing definitions
-</div><div>any definition whose name is the module's name, will be exported (ie are accessible outside of the module)
-</div><div>exported names can have these kind of extensions:
-</div><div>, a number
-</div><div>, a postfix starting with an apostrophe
-</div><div>, letters inside brackets (generics)
-</div><div>to access the definitions in a module which is inside a directory: dir.Definition
-</div><div>to hide a module so it can't be accessed from modules in the parent directory, or outside of the package,
-</div><div>	append an apostrophe at the end of its file name
-</div><div>
-</div><div>a package is a collection of modules
-</div><div>packages are of two kinds:
-</div><div>, application packages that contain a file named "1.jin" (which must contain the init function)
-</div><div>, library packages
-</div><div>
-</div><div>to use a library package, create a file named "your'chosen'name.p",
-</div><div>	which contains the name of the library file (with "lib" and ".so" trimmed)
-</div><div>
-</div><div>
-</div><div>to use the definitions of a package:
-</div><div>	dot'p'file'name.Definition
-</div><div>definitions in "jinit" package, are directly accessible
-</div><div>	so there is no need for a "jinit.p" file, and prefixing with "jinit."
-</div><div>
-</div><div>type definition:
-</div><div>	T := a: A, b: B
-</div><div>defining methods (using a namespace):
-</div><div>	;ns T
-</div><div>		new = { a :A -&gt T ||
-</div><div>			b = ...
-</div><div>			a, b
-</div><div>		}
-</div><div>		m1 = { self!&, x :X -&gt Y ||
-</div><div>			...
-</div><div>		}
-</div><div>		m2 = { self ||
-</div><div>			...
-</div><div>		}
-</div><div>to create an instance of the type:
-</div><div>	i :T = a: x, b: y
-</div><div>	i = T a: x, b: y
-</div><div>	i = T.new a: x
-</div><div>accessing a member:
-</div><div>	i.a
-</div><div>calling a method (note that there is no tuple field named "m", otherwise this will not work):
-</div><div>	i.m x
-</div><div>which is equivalent to:
-</div><div>	T.m i x
-</div><div>if a method has no argument (other than self), it can be called like this: i.m
-</div><div>
-</div><div>enums:
-</div><div>	Bool := #true #false
-</div><div>	x :Bool = #true
-</div><div>	x = Bool#true
-</div><div>type "?A" is a shortcut for "Maybe[A]"
-</div><div>	Maybe[t] := #result t #null
-</div><div>	x :?A = #null
-</div><div>	x &gt&gt {
-</div><div>		#result x | ...
-</div><div>		#null | ...
-</div><div>	}
-</div><div>
-</div><div>intefaces:
-</div><div>	;i I
-</div><div>		m1 ::(self!&, X -&gt Y)
-</div><div>		m2 = { self!& ||
-</div><div>			; default implementation
-</div><div>		}
-</div><div>interface inheritance:
-</div><div>	;i I ::I1 ::I2
-</div><div>		...
-</div><div>defining the methods of a type that implements some interfaces:
-</div><div>	;ns T ::I1 ::I2
-</div><div>		m1 = ...
-</div><div>		m2 = ...
-</div><div>		; I1
-</div><div>		m3 = ...
-</div><div>		m4 = ...
-</div><div>		; I2
-</div><div>		...
-</div><div>
-</div><div>generics:
-</div><div>	T[g] := a: g, b: g
-</div><div>bounded generics:
-</div><div>	T[x::I] := a: x, b: x
-</div><div>
-</div><div>unsafe code to interoperate with low level system, and existing C/C++ code:
-</div><div>	;sys ...
-</div><div>		...
-</div><div>or:
-</div><div>	;sys
-</div><div>	...
-</div><div>	;;
-</div><div>beware! with great power comes great responsibility
-</div>
+</span></div><div><span></span>	<span>'\x12' ;; a byte with hexadecimal value 0x12
+</span></div><div><span>text literals:
+</span></div><div><span></span>	<span>t :Txt = "abc def"
+</span></div><div><span>text interpolation: "abc{x}"
+</span></div><div><span>alternative syntax that makes writing single word text easier:
+</span></div><div><span></span>	<span>'abc
+</span></div><div><span>multiline text, equivalent to "first line
+</span>	<span>second line":
+</span></div><div><span></span>	<span>s = "
+</span></div><div><span></span>	<span></span>	<span>first line
+</span></div><div><span></span>	<span></span>	<span></span>	<span>second line
+</span></div><div><span></span>	<span>"
+</span></div><div><span>it's better to split long text into a list of lines:
+</span></div><div><span></span>	<span>s = """
+</span></div><div><span></span>	<span></span>	<span>first line
+</span></div><div><span></span>	<span></span>	<span></span>	<span>second line
+</span></div><div><span></span>	<span>"""
+</span></div><div><span>which is equivalent to:
+</span></div><div><span></span>	<span>["first line", "</span>	<span>second line"]
+</span></div><div><span>
+</span></div><div><span>dictionaries are indexed using text (instead of "Int'u" as in lists):
+</span></div><div><span></span>	<span>d :Dict[Int4] = [a: 1, b: 2, c: 3]
+</span></div><div><span>indexing:
+</span></div><div><span></span>	<span>d_'a
+</span></div><div><span>
+</span></div><div><span>tuples:
+</span></div><div><span></span>	<span>r :(Int4, Int4, c: Int4) = 1, 2, c: 3
+</span></div><div><span>to access elements:
+</span></div><div><span></span>	<span>r.a
+</span></div><div><span></span>	<span>r.0
+</span></div><div><span>multiple assignment using tuple expansion:
+</span></div><div><span></span>	<span>a, b = 1, 2, 3
+</span></div><div><span>tagged fields can be expanded too, if the name of variables match:
+</span></div><div><span></span>	<span>a, b = a: 1, b: 2
+</span></div><div><span>mutating a tuple field:
+</span></div><div><span></span>	<span>r.a = 10
+</span></div><div><span>small tuples will be kept on stack, big ones on the heap
+</span></div><div><span>
+</span></div><div><span>function:
+</span></div><div><span></span>	<span>f[t::(A,B-&gtC)] :t = { a :A, b :B -&gt C || ... }
+</span></div><div><span></span>	<span>f ::(A,B-&gtC) = { a :A, b :B -&gt C || ... }
+</span></div><div><span></span>	<span>f = { a :A, b :B -&gt C || ... }
+</span></div><div><span>function that can borrow from its environment:
+</span></div><div><span></span>	<span>f ::(A,B-&gtC)!& = { a :A, b :B -&gt C | ... }
+</span></div><div><span></span>	<span>f ::(-&gt)!& = { ... }
+</span></div><div><span></span>	<span>f = { ... }
+</span></div><div><span>function call:
+</span></div><div><span></span>	<span>f x y
+</span></div><div><span>which is equivalent to these forms:
+</span></div><div><span></span>	<span>f(x, y)
+</span></div><div><span></span>	<span>f b: y a: x
+</span></div><div><span></span>	<span>x, y &gt&gt f
+</span></div><div><span>
+</span></div><div><span>default values for parameters:
+</span></div><div><span></span>	<span>f = { a = 1 , b = 2 || ... }
+</span></div><div><span></span>	<span>f b: 22
+</span></div><div><span></span>	<span>f 11
+</span></div><div><span></span>	<span>f()
+</span></div><div><span>
+</span></div><div><span>conditional expression:
+</span></div><div><span></span>	<span>condition .then {} .else {}
+</span></div><div><span></span>	<span>condition1 .then {} .elif {condition2} {} .elif {condition3} {} .else {}
+</span></div><div><span>
+</span></div><div><span>and or:
+</span></div><div><span></span>	<span>a && b
+</span></div><div><span></span>	<span>a \ b
+</span></div><div><span>which are equivalent to:
+</span></div><div><span></span>	<span>a .and {b}
+</span></div><div><span></span>	<span>a .or {b}
+</span></div><div><span>not: -a
+</span></div><div><span>
+</span></div><div><span>there is no loop construct in Jina
+</span></div><div><span>instead we have iterators (types that implement Iter interface):
+</span></div><div><span></span>	<span>iter.each { x | ... }
+</span></div><div><span>
+</span></div><div><span>actor:
+</span></div><div><span></span>	<span>a :Actor[S] = Actor.new S.new()
+</span></div><div><span></span>	<span>a.do { b :S!& || ... }
+</span></div><div><span>
+</span></div><div><span>modules are files containing definitions
+</span></div><div><span>any definition whose name is the module's name, will be exported (ie are accessible outside of the module)
+</span></div><div><span>exported names can have these kind of extensions:
+</span></div><div><span>, a number
+</span></div><div><span>, a postfix starting with an apostrophe
+</span></div><div><span>, letters inside brackets (generics)
+</span></div><div><span>to access the definitions in a module which is inside a directory: dir.Definition
+</span></div><div><span>to hide a module so it can't be accessed from modules in the parent directory, or outside of the package,
+</span></div><div><span></span>	<span>append an apostrophe at the end of its file name
+</span></div><div><span>
+</span></div><div><span>a package is a collection of modules
+</span></div><div><span>packages are of two kinds:
+</span></div><div><span>, application packages that contain a file named "1.jin" (which must contain the init function)
+</span></div><div><span>, library packages
+</span></div><div><span>
+</span></div><div><span>to use a library package, create a file named "your'chosen'name.p",
+</span></div><div><span></span>	<span>which contains the name of the library file (with "lib" and ".so" trimmed)
+</span></div><div><span>
+</span></div><div><span>
+</span></div><div><span>to use the definitions of a package:
+</span></div><div><span></span>	<span>dot'p'file'name.Definition
+</span></div><div><span>definitions in "jinit" package, are directly accessible
+</span></div><div><span></span>	<span>so there is no need for a "jinit.p" file, and prefixing with "jinit."
+</span></div><div><span>
+</span></div><div><span>type definition:
+</span></div><div><span></span>	<span>T := a: A, b: B
+</span></div><div><span>defining methods (using a namespace):
+</span></div><div><span></span>	<span>;ns T
+</span></div><div><span></span>	<span></span>	<span>new = { a :A -&gt T ||
+</span></div><div><span></span>	<span></span>	<span></span>	<span>b = ...
+</span></div><div><span></span>	<span></span>	<span></span>	<span>a, b
+</span></div><div><span></span>	<span></span>	<span>}
+</span></div><div><span></span>	<span></span>	<span>m1 = { self!&, x :X -&gt Y ||
+</span></div><div><span></span>	<span></span>	<span></span>	<span>...
+</span></div><div><span></span>	<span></span>	<span>}
+</span></div><div><span></span>	<span></span>	<span>m2 = { self ||
+</span></div><div><span></span>	<span></span>	<span></span>	<span>...
+</span></div><div><span></span>	<span></span>	<span>}
+</span></div><div><span>to create an instance of the type:
+</span></div><div><span></span>	<span>i :T = a: x, b: y
+</span></div><div><span></span>	<span>i = T a: x, b: y
+</span></div><div><span></span>	<span>i = T.new a: x
+</span></div><div><span>accessing a member:
+</span></div><div><span></span>	<span>i.a
+</span></div><div><span>calling a method (note that there is no tuple field named "m", otherwise this will not work):
+</span></div><div><span></span>	<span>i.m x
+</span></div><div><span>which is equivalent to:
+</span></div><div><span></span>	<span>T.m i x
+</span></div><div><span>if a method has no argument (other than self), it can be called like this: i.m
+</span></div><div><span>
+</span></div><div><span>enums:
+</span></div><div><span></span>	<span>Bool := #true #false
+</span></div><div><span></span>	<span>x :Bool = #true
+</span></div><div><span></span>	<span>x = Bool#true
+</span></div><div><span>type "?A" is a shortcut for "Maybe[A]"
+</span></div><div><span></span>	<span>Maybe[t] := #result t #null
+</span></div><div><span></span>	<span>x :?A = #null
+</span></div><div><span></span>	<span>x &gt&gt {
+</span></div><div><span></span>	<span></span>	<span>#result x | ...
+</span></div><div><span></span>	<span></span>	<span>#null | ...
+</span></div><div><span></span>	<span>}
+</span></div><div><span>
+</span></div><div><span>intefaces:
+</span></div><div><span></span>	<span>;i I
+</span></div><div><span></span>	<span></span>	<span>m1 ::(self!&, X -&gt Y)
+</span></div><div><span></span>	<span></span>	<span>m2 = { self!& ||
+</span></div><div><span></span>	<span></span>	<span></span>	<span>; default implementation
+</span></div><div><span></span>	<span></span>	<span>}
+</span></div><div><span>interface inheritance:
+</span></div><div><span></span>	<span>;i I ::I1 ::I2
+</span></div><div><span></span>	<span></span>	<span>...
+</span></div><div><span>defining the methods of a type that implements some interfaces:
+</span></div><div><span></span>	<span>;ns T ::I1 ::I2
+</span></div><div><span></span>	<span></span>	<span>m1 = ...
+</span></div><div><span></span>	<span></span>	<span>m2 = ...
+</span></div><div><span></span>	<span></span>	<span>; I1
+</span></div><div><span></span>	<span></span>	<span>m3 = ...
+</span></div><div><span></span>	<span></span>	<span>m4 = ...
+</span></div><div><span></span>	<span></span>	<span>; I2
+</span></div><div><span></span>	<span></span>	<span>...
+</span></div><div><span>
+</span></div><div><span>generics:
+</span></div><div><span></span>	<span>T[g] := a: g, b: g
+</span></div><div><span>bounded generics:
+</span></div><div><span></span>	<span>T[x::I] := a: x, b: x
+</span></div><div><span>
+</span></div><div><span>unsafe code to interoperate with low level system, and existing C/C++ code:
+</span></div><div><span></span>	<span>;sys ...
+</span></div><div><span></span>	<span></span>	<span>...
+</span></div><div><span>or:
+</span></div><div><span></span>	<span>;sys
+</span></div><div><span></span>	<span>...
+</span></div><div><span></span>	<span>;;
+</span></div><div><span>beware! with great power comes great responsibility
+</span></div>
 </body></html>
